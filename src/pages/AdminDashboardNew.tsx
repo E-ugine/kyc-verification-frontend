@@ -489,8 +489,8 @@ const AdminDashboardNew = () => {
                 Reject Application
               </Button>
             </DialogFooter>
-          </Dialog>
-        )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
