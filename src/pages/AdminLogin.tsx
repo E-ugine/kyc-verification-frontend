@@ -21,27 +21,35 @@ const AdminLogin = () => {
     setIsLoading(true);
     setError("");
 
+    
     try {
-      // Create form data for application/x-www-form-urlencoded
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', password);
+  // Send JSON data to match the FastAPI Body(...) parameter
+  const response = await fetch("http://localhost:8000/admin/login", {
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password
+    }),
+  });
 
-      const response = await axios.post("http://localhost:8000/admin/login", formData, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-      });
+  const data = await response.json();
 
-      if (response.data.access_token) {
-        localStorage.setItem("adminToken", response.data.access_token);
-        navigate("/admin");
-      }
-    } catch (error: any) {
-      setError(error.response?.data?.detail || "Invalid credentials. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  if (!response.ok) {
+    throw new Error(data.detail || "Invalid credentials");
+  }
+
+  if (data.access_token) {
+    localStorage.setItem("adminToken", data.access_token);
+    navigate("/admin");
+  }
+} catch (error: any) {
+  setError(error.message || "Invalid credentials. Please try again.");
+} finally {
+  setIsLoading(false);
+}
   };
 
   return (
