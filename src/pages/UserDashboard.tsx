@@ -1,121 +1,158 @@
 import { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
+import {
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, FileText, Camera } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft, Upload, FileText, Camera, AlertCircle,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const countries = [
-  "United States", "Canada", "United Kingdom", "Germany", "France", 
-  "Australia", "Japan", "Singapore", "India", "Brazil"
+  "United States", "Kenya", "Canada", "United Kingdom", "Germany",
+  "France", "Australia", "Japan", "Singapore", "India", "Brazil",
 ];
 
 const UserDashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+
   const [formData, setFormData] = useState({
     fullName: "",
-    dateOfBirth: "",
+    dob: "",
     idNumber: "",
     country: "",
     address: "",
-    email: ""
+    email: "",
   });
+
   const [files, setFiles] = useState({
     passport: null as File | null,
-    selfie: null as File | null
+    selfie: null as File | null,
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [debugInfo, setDebugInfo] = useState("");
+
   const passportInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (validationErrors.length > 0) setValidationErrors([]);
   };
 
   const handleFileChange = (type: 'passport' | 'selfie', file: File | null) => {
     setFiles(prev => ({ ...prev, [type]: file }));
+    if (validationErrors.length > 0) setValidationErrors([]);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Basic validation
-    if (!formData.fullName || !formData.dateOfBirth || !formData.idNumber || 
-        !formData.country || !formData.address || !formData.email) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
-      });
-      return;
+  const validateForm = () => {
+    const errors: string[] = [];
+
+    if (!formData.fullName.trim()) errors.push("Full Name is required");
+    if (!formData.dob) errors.push("Date of Birth is required");
+    if (!formData.idNumber.trim()) errors.push("ID Number is required");
+    if (!formData.country) errors.push("Country is required");
+    if (!formData.address.trim()) errors.push("Address is required");
+    if (!formData.email.trim()) errors.push("Email is required");
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      errors.push("Please enter a valid email address");
     }
 
-    if (!files.passport || !files.selfie) {
-      toast({
-        title: "Missing Files",
-        description: "Please upload both passport/ID and selfie photos.",
-        variant: "destructive"
-      });
+    if (formData.dob) {
+      const birthDate = new Date(formData.dob);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (age < 18 || (age === 18 && monthDiff < 0)) {
+        errors.push("You must be at least 18 years old");
+      }
+    }
+
+    if (!files.passport) errors.push("Passport/ID document is required");
+    if (!files.selfie) errors.push("Selfie photo is required");
+
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    if (files.passport && !allowedTypes.includes(files.passport.type)) {
+      errors.push("Passport/ID must be a valid image file (JPEG, PNG, GIF)");
+    }
+    if (files.selfie && !allowedTypes.includes(files.selfie.type)) {
+      errors.push("Selfie must be a valid image file (JPEG, PNG, GIF)");
+    }
+
+    if (files.passport && files.passport.size > 5 * 1024 * 1024) {
+      errors.push("Passport/ID file must be less than 5MB");
+    }
+    if (files.selfie && files.selfie.size > 5 * 1024 * 1024) {
+      errors.push("Selfie file must be less than 5MB");
+    }
+
+    return errors;
+  };
+
+  const resetForm = () => {
+    setFormData({
+      fullName: "",
+      dob: "",
+      idNumber: "",
+      country: "",
+      address: "",
+      email: "",
+    });
+    setFiles({ passport: null, selfie: null });
+    if (passportInputRef.current) passportInputRef.current.value = "";
+    if (selfieInputRef.current) selfieInputRef.current.value = "";
+  };
+
+  const handleSubmit = async () => {
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
       return;
     }
 
     setIsSubmitting(true);
+    setDebugInfo("");
 
     try {
-      // Create FormData for multipart/form-data
       const formDataToSend = new FormData();
-      formDataToSend.append('full_name', formData.fullName);
-      formDataToSend.append('date_of_birth', formData.dateOfBirth);
-      formDataToSend.append('id_number', formData.idNumber);
-      formDataToSend.append('country', formData.country);
-      formDataToSend.append('address', formData.address);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('selfie_image', files.selfie);
-      formDataToSend.append('id_document', files.passport);
 
-      const response = await axios.post("http://localhost:8000/kyc/submit", formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      formDataToSend.append("full_name", formData.fullName);
+      formDataToSend.append("dob", formData.dob);
+      formDataToSend.append("id_number", formData.idNumber);
+      formDataToSend.append("country", formData.country);
+      formDataToSend.append("address", formData.address);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("selfie_image", files.selfie!);
+      formDataToSend.append("id_document", files.passport!);
+
+      const response = await fetch("http://localhost:8000/kyc/submit", {
+        method: "POST",
+        body: formDataToSend,
       });
 
-      toast({
-        title: "Application Submitted",
-        description: "Your KYC application has been submitted successfully. You will receive an email confirmation shortly."
-      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
+      }
 
-      // Store application data locally as backup
-      const applicationData = {
-        id: response.data.id || Date.now().toString(),
-        ...formData,
-        files: files,
-        status: "pending",
-        submissionDate: new Date().toISOString(),
-        notes: ""
-      };
+      const result = await response.json();
+      console.log("KYC Submission Success:", result);
 
-      const existingApplications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-      existingApplications.push(applicationData);
-      localStorage.setItem("kycApplications", JSON.stringify(existingApplications));
-
-      setTimeout(() => {
-        navigate("/status-check");
-      }, 2000);
-
+      resetForm(); // Clear all fields
     } catch (error: any) {
       console.error("Error submitting KYC application:", error);
-      toast({
-        title: "Submission Failed",
-        description: error.response?.data?.detail || "Failed to submit application. Please try again.",
-        variant: "destructive"
-      });
+      setDebugInfo(`Error: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -125,13 +162,34 @@ const UserDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <Link to="/" className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4">
+          <div
+            onClick={() => navigate("/")}
+            title="Go back to home"
+            className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4 cursor-pointer"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
-          </Link>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">KYC Verification Form</h1>
-          <p className="text-slate-600">Please provide accurate information for identity verification</p>
+          </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            KYC Verification Form
+          </h1>
+          <p className="text-slate-600">
+            Please provide accurate information for identity verification
+          </p>
         </div>
+
+        {validationErrors.length > 0 && (
+          <Alert className="max-w-2xl mx-auto mb-6 border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription>
+              <ul className="list-disc list-inside space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index} className="text-red-700">{error}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Card className="max-w-2xl mx-auto shadow-lg border-0">
           <CardHeader>
@@ -141,8 +199,9 @@ const UserDashboard = () => {
             </CardTitle>
             <CardDescription>All fields marked with * are required</CardDescription>
           </CardHeader>
+
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name *</Label>
@@ -151,17 +210,15 @@ const UserDashboard = () => {
                     value={formData.fullName}
                     onChange={(e) => handleInputChange("fullName", e.target.value)}
                     placeholder="Enter your full name"
-                    className="border-slate-300 focus:border-blue-500"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                  <Label htmlFor="dob">Date of Birth *</Label>
                   <Input
-                    id="dateOfBirth"
+                    id="dob"
                     type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
-                    className="border-slate-300 focus:border-blue-500"
+                    value={formData.dob}
+                    onChange={(e) => handleInputChange("dob", e.target.value)}
                   />
                 </div>
               </div>
@@ -174,13 +231,12 @@ const UserDashboard = () => {
                     value={formData.idNumber}
                     onChange={(e) => handleInputChange("idNumber", e.target.value)}
                     placeholder="Enter your ID number"
-                    className="border-slate-300 focus:border-blue-500"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="country">Country *</Label>
                   <Select onValueChange={(value) => handleInputChange("country", value)}>
-                    <SelectTrigger className="border-slate-300 focus:border-blue-500">
+                    <SelectTrigger>
                       <SelectValue placeholder="Select your country" />
                     </SelectTrigger>
                     <SelectContent>
@@ -202,7 +258,6 @@ const UserDashboard = () => {
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   placeholder="Enter your email address"
-                  className="border-slate-300 focus:border-blue-500"
                 />
               </div>
 
@@ -213,11 +268,12 @@ const UserDashboard = () => {
                   value={formData.address}
                   onChange={(e) => handleInputChange("address", e.target.value)}
                   placeholder="Enter your full address"
-                  className="border-slate-300 focus:border-blue-500 min-h-[100px]"
+                  className="min-h-[100px]"
                 />
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
+                {/* Passport Upload */}
                 <div className="space-y-2">
                   <Label>Passport/ID Document *</Label>
                   <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
@@ -230,7 +286,14 @@ const UserDashboard = () => {
                     />
                     <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
                     <p className="text-sm text-slate-600 mb-2">
-                      {files.passport ? files.passport.name : "Click to upload passport/ID"}
+                      {files.passport ? (
+                        <>
+                          {files.passport.name}<br />
+                          <span className="text-xs text-slate-500">
+                            {(files.passport.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </>
+                      ) : "Click to upload passport/ID"}
                     </p>
                     <Button
                       type="button"
@@ -243,6 +306,7 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
+                {/* Selfie Upload */}
                 <div className="space-y-2">
                   <Label>Selfie Photo *</Label>
                   <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
@@ -255,7 +319,14 @@ const UserDashboard = () => {
                     />
                     <Camera className="h-8 w-8 text-slate-400 mx-auto mb-2" />
                     <p className="text-sm text-slate-600 mb-2">
-                      {files.selfie ? files.selfie.name : "Click to upload selfie"}
+                      {files.selfie ? (
+                        <>
+                          {files.selfie.name}<br />
+                          <span className="text-xs text-slate-500">
+                            {(files.selfie.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </>
+                      ) : "Click to upload selfie"}
                     </p>
                     <Button
                       type="button"
@@ -269,16 +340,29 @@ const UserDashboard = () => {
                 </div>
               </div>
 
-              <Button 
-                type="submit" 
+              <Button
+                onClick={handleSubmit}
                 className="w-full bg-blue-600 hover:bg-blue-700 py-3"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Submitting..." : "Submit KYC Application"}
               </Button>
-            </form>
+            </div>
           </CardContent>
         </Card>
+
+        {process.env.NODE_ENV === "development" && debugInfo && (
+          <Card className="max-w-2xl mx-auto mt-6 bg-slate-50">
+            <CardHeader>
+              <CardTitle className="text-sm">Debug Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-xs text-slate-700 whitespace-pre-wrap overflow-auto max-h-96">
+                {debugInfo}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
