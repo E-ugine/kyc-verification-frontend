@@ -8,8 +8,11 @@ import Index from "./pages/Index";
 import UserDashboard from "./pages/UserDashboard";
 import StatusCheck from "./pages/StatusCheck";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboardNew from "./pages/AdminDashboardNew";
+import AdminLogin from "./pages/AdminLogin";
 import ApplicationDetail from "./pages/ApplicationDetail";
 import NotFound from "./pages/NotFound";
+import PrivateRoute from "./components/PrivateRoute";
 
 const queryClient = new QueryClient();
 
@@ -23,8 +26,31 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/kyc-form" element={<UserDashboard />} />
           <Route path="/status-check" element={<StatusCheck />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/application/:id" element={<ApplicationDetail />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route 
+            path="/admin" 
+            element={
+              <PrivateRoute>
+                <AdminDashboardNew />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/admin/dashboard" 
+            element={
+              <PrivateRoute>
+                <AdminDashboardNew />
+              </PrivateRoute>
+            } 
+          />
+          <Route 
+            path="/admin/application/:id" 
+            element={
+              <PrivateRoute>
+                <ApplicationDetail />
+              </PrivateRoute>
+            } 
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
