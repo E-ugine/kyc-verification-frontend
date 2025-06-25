@@ -12,7 +12,7 @@ interface KYCApplication {
   id: string;
   fullName: string;
   country: string;
-  idNumber: string;
+  id_number: string;
   email: string;
   dateOfBirth: string;
   address: string;
@@ -45,7 +45,7 @@ const AdminDashboardNew = () => {
     if (searchTerm) {
       filtered = filtered.filter(app => 
         app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.idNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        app.id_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -338,7 +338,7 @@ const AdminDashboardNew = () => {
                       <div className="flex items-center space-x-4">
                         <div>
                           <h3 className="font-semibold text-slate-800">{app.fullName}</h3>
-                          <p className="text-sm text-slate-600">ID: {app.idNumber}</p>
+                          <p className="text-sm text-slate-600">ID: {app.id_number}</p>
                           <p className="text-sm text-slate-600">Country: {app.country}</p>
                         </div>
                         <div className="hidden md:block">
@@ -393,7 +393,7 @@ const AdminDashboardNew = () => {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-slate-600">ID Number</label>
-                      <p className="text-slate-800">{selectedApp.idNumber}</p>
+                      <p className="text-slate-800">{selectedApp.id_number}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-slate-600">Country</label>
