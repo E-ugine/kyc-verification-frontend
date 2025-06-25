@@ -67,7 +67,7 @@ const AdminDashboardNew = () => {
 
       const response = await axios.get("http://localhost:8000/admin/all", {
         headers: {
-          Authorization: token
+          Authorization:`Bearer ${token}`
         }
       });
       setApplications(response.data);

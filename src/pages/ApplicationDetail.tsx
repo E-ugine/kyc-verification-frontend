@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,31 +19,69 @@ const ApplicationDetail = () => {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
 
   useEffect(() => {
-    const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-    const found = applications.find((app: any) => app.id === id);
-    if (found) {
-      setApplication(found);
-      setNotes(found.notes || "");
-    }
+    // Replace localStorage with actual API call
+    const fetchApplication = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/kyc/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Fetched application:', data); // Debug log
+          setApplication(data);
+          setNotes(data.rejection_reason || "");
+        } else {
+          console.error('Failed to fetch application');
+        }
+      } catch (error) {
+        console.error('Error fetching application:', error);
+        // Fallback to localStorage for demo purposes
+        const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
+        const found = applications.find((app: any) => app.id === id);
+        if (found) {
+          setApplication(found);
+          setNotes(found.notes || "");
+        }
+      }
+    };
+
+    fetchApplication();
   }, [id]);
 
-  const updateApplicationStatus = (status: string, reason: string = "") => {
-    const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-    const updatedApplications = applications.map((app: any) => 
-      app.id === id ? { ...app, status, notes: reason || notes } : app
-    );
-    localStorage.setItem("kycApplications", JSON.stringify(updatedApplications));
-    
-    setApplication((prev: any) => ({ ...prev, status, notes: reason || notes }));
-    
-    toast({
-      title: status === "approved" ? "Application Approved" : "Application Rejected",
-      description: `The application has been ${status} successfully.`
-    });
+  const updateApplicationStatus = async (status: string, reason: string = "") => {
+    try {
+      const response = await fetch(`http://localhost:8000/kyc/${id}/status`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: status,
+          rejection_reason: reason || notes
+        }),
+      });
 
-    setTimeout(() => {
-      navigate("/admin");
-    }, 2000);
+      if (response.ok) {
+        const updatedApp = await response.json();
+        setApplication(updatedApp);
+        
+        toast({
+          title: status === "approved" ? "Application Approved" : "Application Rejected",
+          description: `The application has been ${status} successfully.`
+        });
+
+        setTimeout(() => {
+          navigate("/admin");
+        }, 2000);
+      } else {
+        throw new Error(`Failed to update application status`);
+      }
+    } catch (error) {
+      console.error('Error updating application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleApprove = () => {
@@ -78,6 +115,16 @@ const ApplicationDetail = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  };
+
   if (!application) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
@@ -106,7 +153,7 @@ const ApplicationDetail = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-800 mb-2">Application Details</h1>
-              <p className="text-slate-600">Review and manage this KYC application</p>
+              <p className="text-slate-600">Review and manage this KYC application (ID: {application.id})</p>
             </div>
             {getStatusBadge(application.status)}
           </div>
@@ -128,21 +175,21 @@ const ApplicationDetail = () => {
                     <User className="h-4 w-4 text-slate-500" />
                     <div>
                       <p className="text-sm font-medium text-slate-600">Full Name</p>
-                      <p className="text-slate-800">{application.fullName}</p>
+                      <p className="text-slate-800">{application.full_name}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Calendar className="h-4 w-4 text-slate-500" />
                     <div>
                       <p className="text-sm font-medium text-slate-600">Date of Birth</p>
-                      <p className="text-slate-800">{application.dateOfBirth}</p>
+                      <p className="text-slate-800">{formatDate(application.dob)}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Hash className="h-4 w-4 text-slate-500" />
                     <div>
                       <p className="text-sm font-medium text-slate-600">ID Number</p>
-                      <p className="text-slate-800">{application.idNumber}</p>
+                      <p className="text-slate-800">{application.id_number}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -151,13 +198,6 @@ const ApplicationDetail = () => {
                       <p className="text-sm font-medium text-slate-600">Country</p>
                       <p className="text-slate-800">{application.country}</p>
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Mail className="h-4 w-4 text-slate-500 mt-1" />
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">Email Address</p>
-                    <p className="text-slate-800">{application.email}</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
@@ -184,21 +224,63 @@ const ApplicationDetail = () => {
                   <div>
                     <h4 className="font-semibold text-slate-800 mb-3">Passport/ID Document</h4>
                     <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center bg-slate-50">
-                      <FileText className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600">
-                        {application.files?.passport?.name || "passport-document.jpg"}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">Document preview not available in demo</p>
+                      {application.id_doc ? (
+                        <div>
+                          <img 
+                            src={`http://localhost:8000/${application.id_doc}`} 
+                            alt="ID Document" 
+                            className="max-w-full max-h-48 mx-auto mb-2 rounded"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling.style.display = 'block';
+                            }}
+                          />
+                          <div style={{ display: 'none' }}>
+                            <FileText className="h-12 w-12 text-slate-400 mx-auto mb-2" />
+                            <p className="text-sm text-slate-600">Document preview unavailable</p>
+                          </div>
+                          <p className="text-sm text-slate-600">
+                            {application.id_doc.split('/').pop()}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <FileText className="h-12 w-12 text-slate-400 mx-auto mb-2" />
+                          <p className="text-sm text-slate-600">No document uploaded</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-800 mb-3">Selfie Photo</h4>
                     <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center bg-slate-50">
-                      <User className="h-12 w-12 text-slate-400 mx-auto mb-2" />
-                      <p className="text-sm text-slate-600">
-                        {application.files?.selfie?.name || "selfie-photo.jpg"}
-                      </p>
-                      <p className="text-xs text-slate-500 mt-1">Photo preview not available in demo</p>
+                      {application.selfie ? (
+                        <div>
+                          <img 
+                            src={`http://localhost:8000/${application.selfie}`} 
+                            alt="Selfie" 
+                            className="max-w-full max-h-48 mx-auto mb-2 rounded"
+                            onError={(e) => {
+                              // Fallback if image fails to load
+                              e.currentTarget.style.display = 'none';
+                              e.currentTarget.nextElementSibling.style.display = 'block';
+                            }}
+                          />
+                          <div style={{ display: 'none' }}>
+                            <User className="h-12 w-12 text-slate-400 mx-auto mb-2" />
+                            <p className="text-sm text-slate-600">Photo preview unavailable</p>
+                          </div>
+                          <p className="text-sm text-slate-600">
+                            {application.selfie.split('/').pop()}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <User className="h-12 w-12 text-slate-400 mx-auto mb-2" />
+                          <p className="text-sm text-slate-600">No selfie uploaded</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -212,7 +294,7 @@ const ApplicationDetail = () => {
               <CardHeader>
                 <CardTitle>Application Status</CardTitle>
                 <CardDescription>
-                  Submitted on {new Date(application.submissionDate).toLocaleDateString()}
+                  Submitted on {formatDate(application.created_at)}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -301,16 +383,32 @@ const ApplicationDetail = () => {
                     className="min-h-[120px]"
                   />
                   <Button
-                    onClick={() => {
-                      const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-                      const updatedApplications = applications.map((app: any) => 
-                        app.id === id ? { ...app, notes } : app
-                      );
-                      localStorage.setItem("kycApplications", JSON.stringify(updatedApplications));
-                      toast({
-                        title: "Notes Saved",
-                        description: "Your notes have been saved successfully."
-                      });
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(`http://localhost:8000/kyc/${id}/notes`, {
+                          method: "PUT",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({ notes }),
+                        });
+
+                        if (response.ok) {
+                          toast({
+                            title: "Notes Saved",
+                            description: "Your notes have been saved successfully."
+                          });
+                        } else {
+                          throw new Error('Failed to save notes');
+                        }
+                      } catch (error) {
+                        console.error('Error saving notes:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to save notes. Please try again.",
+                          variant: "destructive"
+                        });
+                      }
                     }}
                     variant="outline"
                     size="sm"

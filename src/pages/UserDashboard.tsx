@@ -29,7 +29,6 @@ const UserDashboard = () => {
     idNumber: "",
     country: "",
     address: "",
-    email: "",
   });
 
   const [files, setFiles] = useState({
@@ -62,18 +61,13 @@ const UserDashboard = () => {
     if (!formData.idNumber.trim()) errors.push("ID Number is required");
     if (!formData.country) errors.push("Country is required");
     if (!formData.address.trim()) errors.push("Address is required");
-    if (!formData.email.trim()) errors.push("Email is required");
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      errors.push("Please enter a valid email address");
-    }
 
     if (formData.dob) {
-      const birthDate = new Date(formData.dob);
+      const dob = new Date(formData.dob);
+      const formattedDob = dob.toISOString().split('T')[0]; 
       const today = new Date();
-      const age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
+      const age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
       if (age < 18 || (age === 18 && monthDiff < 0)) {
         errors.push("You must be at least 18 years old");
       }
@@ -107,7 +101,6 @@ const UserDashboard = () => {
       idNumber: "",
       country: "",
       address: "",
-      email: "",
     });
     setFiles({ passport: null, selfie: null });
     if (passportInputRef.current) passportInputRef.current.value = "";
@@ -115,47 +108,48 @@ const UserDashboard = () => {
   };
 
   const handleSubmit = async () => {
-    const errors = validateForm();
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      return;
+  const errors = validateForm();
+  if (errors.length > 0) {
+    setValidationErrors(errors);
+    return;
+  }
+
+  setIsSubmitting(true);
+  setDebugInfo("");
+
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append("full_name", formData.fullName);
+
+    const dobFormatted = new Date(formData.dob).toISOString().split("T")[0];
+    formDataToSend.append("dob", dobFormatted);
+
+    formDataToSend.append("id_number", formData.idNumber);
+    formDataToSend.append("country", formData.country);
+    formDataToSend.append("address", formData.address);
+    formDataToSend.append("selfie_image", files.selfie!);
+    formDataToSend.append("id_document", files.passport!);
+
+    const response = await fetch("http://localhost:8000/kyc/submit", {
+      method: "POST",
+      body: formDataToSend,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
     }
 
-    setIsSubmitting(true);
-    setDebugInfo("");
-
-    try {
-      const formDataToSend = new FormData();
-
-      formDataToSend.append("full_name", formData.fullName);
-      formDataToSend.append("dob", formData.dob);
-      formDataToSend.append("id_number", formData.idNumber);
-      formDataToSend.append("country", formData.country);
-      formDataToSend.append("address", formData.address);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("selfie_image", files.selfie!);
-      formDataToSend.append("id_document", files.passport!);
-
-      const response = await fetch("http://localhost:8000/kyc/submit", {
-        method: "POST",
-        body: formDataToSend,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log("KYC Submission Success:", result);
-
-      resetForm(); // Clear all fields
-    } catch (error: any) {
-      console.error("Error submitting KYC application:", error);
-      setDebugInfo(`Error: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
+    const result = await response.json();
+    console.log("KYC Submission Success:", result);
+    setDebugInfo(`Success! Application submitted with ID: ${result.id}`);
+    resetForm();
+  } catch (error: any) {
+    console.error("Error submitting KYC application:", error);
+    setDebugInfo(`Error: ${error.message}`);
+  } finally {
+    setIsSubmitting(false);
+  }
   };
 
   return (
@@ -251,17 +245,6 @@ const UserDashboard = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  placeholder="Enter your email address"
-                />
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="address">Address *</Label>
                 <Textarea
                   id="address"
@@ -273,7 +256,6 @@ const UserDashboard = () => {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Passport Upload */}
                 <div className="space-y-2">
                   <Label>Passport/ID Document *</Label>
                   <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
@@ -306,7 +288,6 @@ const UserDashboard = () => {
                   </div>
                 </div>
 
-                {/* Selfie Upload */}
                 <div className="space-y-2">
                   <Label>Selfie Photo *</Label>
                   <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">

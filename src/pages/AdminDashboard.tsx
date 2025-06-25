@@ -1,40 +1,87 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, Eye, Filter, Users, Clock, CheckCircle, XCircle } from "lucide-react";
+import {
+  ArrowLeft, Search, Eye, Filter, Users,
+  Clock, CheckCircle, XCircle
+} from "lucide-react";
+
+interface KYCApplication {
+  id: string;
+  fullName: string;
+  idNumber: string;
+  email: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submissionDate: string | Date;
+}
 
 const AdminDashboard = () => {
-  const [applications, setApplications] = useState<any[]>([]);
-  const [filteredApplications, setFilteredApplications] = useState<any[]>([]);
+  const [applications, setApplications] = useState<KYCApplication[]>([]);
+  const [filteredApplications, setFilteredApplications] = useState<KYCApplication[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-    setApplications(stored);
-    setFilteredApplications(stored);
+    const loadAndValidateApplications = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem("kycApplications") || "[]");
+
+        const validatedApplications: KYCApplication[] = stored.map((app: any) => ({
+          id: String(app.id || Date.now()),
+          fullName:
+            typeof app.fullName === "string"
+              ? app.fullName.trim()
+              : String(app.fullName || "Unknown"),
+          idNumber:
+            typeof app.idNumber === "string"
+              ? app.idNumber.trim()
+              : String(app.idNumber || ""),
+          email:
+            typeof app.email === "string"
+              ? app.email.trim().toLowerCase()
+              : String(app.email || "").toLowerCase(),
+          status: ["pending", "approved", "rejected"].includes(app.status)
+            ? app.status
+            : "pending",
+          submissionDate: app.submissionDate || new Date().toISOString(),
+        }));
+
+        setApplications(validatedApplications);
+        setFilteredApplications(validatedApplications);
+      } catch (error) {
+        console.error("Failed to load applications:", error);
+        setApplications([]);
+        setFilteredApplications([]);
+      }
+    };
+
+    loadAndValidateApplications();
   }, []);
 
   useEffect(() => {
-    let filtered = applications;
+    const filterApplications = () => {
+      let filtered = applications;
 
-    if (searchTerm) {
-      filtered = filtered.filter(app => 
-        app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.idNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+      if (searchTerm) {
+        const term = searchTerm.toLowerCase();
+        filtered = filtered.filter((app) =>
+          String(app.fullName || "").toLowerCase().includes(term) ||
+          String(app.idNumber || "").toLowerCase().includes(term) ||
+          String(app.email || "").toLowerCase().includes(term)
+        );
+      }
 
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(app => app.status === statusFilter);
-    }
+      if (statusFilter !== "all") {
+        filtered = filtered.filter((app) => app.status === statusFilter);
+      }
 
-    setFilteredApplications(filtered);
+      setFilteredApplications(filtered);
+    };
+
+    filterApplications();
   }, [searchTerm, statusFilter, applications]);
 
   const getStatusBadge = (status: string) => {
@@ -51,13 +98,12 @@ const AdminDashboard = () => {
   };
 
   const getStatusCounts = () => {
-    const counts = {
+    return {
       total: applications.length,
-      pending: applications.filter(app => app.status === "pending").length,
-      approved: applications.filter(app => app.status === "approved").length,
-      rejected: applications.filter(app => app.status === "rejected").length,
+      pending: applications.filter((app) => app.status === "pending").length,
+      approved: applications.filter((app) => app.status === "approved").length,
+      rejected: applications.filter((app) => app.status === "rejected").length,
     };
-    return counts;
   };
 
   const counts = getStatusCounts();
@@ -144,34 +190,16 @@ const AdminDashboard = () => {
                 />
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant={statusFilter === "all" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("all")}
-                  size="sm"
-                >
-                  All
-                </Button>
-                <Button
-                  variant={statusFilter === "pending" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("pending")}
-                  size="sm"
-                >
-                  Pending
-                </Button>
-                <Button
-                  variant={statusFilter === "approved" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("approved")}
-                  size="sm"
-                >
-                  Approved
-                </Button>
-                <Button
-                  variant={statusFilter === "rejected" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("rejected")}
-                  size="sm"
-                >
-                  Rejected
-                </Button>
+                {["all", "pending", "approved", "rejected"].map((status) => (
+                  <Button
+                    key={status}
+                    variant={statusFilter === status ? "default" : "outline"}
+                    onClick={() => setStatusFilter(status)}
+                    size="sm"
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Button>
+                ))}
               </div>
             </div>
           </CardContent>
@@ -200,11 +228,11 @@ const AdminDashboard = () => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-4">
                         <div>
-                          <h3 className="font-semibold text-slate-800">{app.fullName}</h3>
-                          <p className="text-sm text-slate-600">ID: {app.idNumber}</p>
+                          <h3 className="font-semibold text-slate-800">{app.fullName || "Unknown"}</h3>
+                          <p className="text-sm text-slate-600">ID: {app.idNumber || "N/A"}</p>
                         </div>
                         <div className="hidden md:block">
-                          <p className="text-sm text-slate-600">{app.email}</p>
+                          <p className="text-sm text-slate-600">{app.email || "N/A"}</p>
                           <p className="text-sm text-slate-500">
                             {new Date(app.submissionDate).toLocaleDateString()}
                           </p>
