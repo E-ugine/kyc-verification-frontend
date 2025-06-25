@@ -22,17 +22,23 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:8000/admin/login", {
-        username,
-        password,
+      // Create form data for application/x-www-form-urlencoded
+      const formData = new URLSearchParams();
+      formData.append('username', username);
+      formData.append('password', password);
+
+      const response = await axios.post("http://localhost:8000/admin/login", formData, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
       });
 
-      if (response.data.token) {
-        localStorage.setItem("adminToken", response.data.token);
+      if (response.data.access_token) {
+        localStorage.setItem("adminToken", response.data.access_token);
         navigate("/admin");
       }
     } catch (error: any) {
-      setError(error.response?.data?.message || "Invalid credentials. Please try again.");
+      setError(error.response?.data?.detail || "Invalid credentials. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +79,7 @@ const AdminLogin = () => {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter your username"
+                  placeholder="Enter your username (e.g., admin)"
                   required
                   className="border-slate-300 focus:border-purple-500"
                 />
@@ -87,7 +93,7 @@ const AdminLogin = () => {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
+                    placeholder="Enter your password (e.g., securepass)"
                     required
                     className="border-slate-300 focus:border-purple-500 pr-10"
                   />

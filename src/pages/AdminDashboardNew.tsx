@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,15 +60,26 @@ const AdminDashboardNew = () => {
   const fetchApplications = async () => {
     try {
       const token = localStorage.getItem("adminToken");
+      if (!token) {
+        navigate("/admin/login");
+        return;
+      }
+
       const response = await axios.get("http://localhost:8000/admin/all", {
         headers: {
-          Authorization: "admin-token-123"
+          Authorization: token
         }
       });
       setApplications(response.data);
       setFilteredApplications(response.data);
     } catch (error) {
       console.error("Error fetching applications:", error);
+      // If token is invalid, redirect to login
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        localStorage.removeItem("adminToken");
+        navigate("/admin/login");
+        return;
+      }
       // Fallback to localStorage data if API fails
       const stored = JSON.parse(localStorage.getItem("kycApplications") || "[]");
       setApplications(stored);
@@ -82,11 +92,12 @@ const AdminDashboardNew = () => {
   const handleApprove = async (id: string) => {
     setActionLoading(id);
     try {
+      const token = localStorage.getItem("adminToken");
       await axios.put(`http://localhost:8000/admin/verify/${id}`, {
         status: "approved"
       }, {
         headers: {
-          Authorization: "admin-token-123"
+          Authorization: token
         }
       });
       
@@ -98,6 +109,10 @@ const AdminDashboardNew = () => {
       setSelectedApp(null);
     } catch (error) {
       console.error("Error approving application:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        localStorage.removeItem("adminToken");
+        navigate("/admin/login");
+      }
     } finally {
       setActionLoading(null);
     }
@@ -108,12 +123,13 @@ const AdminDashboardNew = () => {
     
     setActionLoading(selectedApp.id);
     try {
+      const token = localStorage.getItem("adminToken");
       await axios.put(`http://localhost:8000/admin/verify/${selectedApp.id}`, {
         status: "rejected",
         reason: rejectReason
       }, {
         headers: {
-          Authorization: "admin-token-123"
+          Authorization: token
         }
       });
       
@@ -127,6 +143,10 @@ const AdminDashboardNew = () => {
       setRejectReason("");
     } catch (error) {
       console.error("Error rejecting application:", error);
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        localStorage.removeItem("adminToken");
+        navigate("/admin/login");
+      }
     } finally {
       setActionLoading(null);
     }

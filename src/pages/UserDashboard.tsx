@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Upload, FileText, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
 
 const countries = [
   "United States", "Canada", "United Kingdom", "Germany", "France", 
@@ -30,6 +30,7 @@ const UserDashboard = () => {
     passport: null as File | null,
     selfie: null as File | null
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const passportInputRef = useRef<HTMLInputElement>(null);
   const selfieInputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +43,7 @@ const UserDashboard = () => {
     setFiles(prev => ({ ...prev, [type]: file }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -65,28 +66,59 @@ const UserDashboard = () => {
       return;
     }
 
-    // Store application data (in real app, this would be an API call)
-    const applicationData = {
-      id: Date.now().toString(),
-      ...formData,
-      files: files,
-      status: "pending",
-      submissionDate: new Date().toISOString(),
-      notes: ""
-    };
+    setIsSubmitting(true);
 
-    const existingApplications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-    existingApplications.push(applicationData);
-    localStorage.setItem("kycApplications", JSON.stringify(existingApplications));
+    try {
+      // Create FormData for multipart/form-data
+      const formDataToSend = new FormData();
+      formDataToSend.append('full_name', formData.fullName);
+      formDataToSend.append('date_of_birth', formData.dateOfBirth);
+      formDataToSend.append('id_number', formData.idNumber);
+      formDataToSend.append('country', formData.country);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('selfie_image', files.selfie);
+      formDataToSend.append('id_document', files.passport);
 
-    toast({
-      title: "Application Submitted",
-      description: "Your KYC application has been submitted successfully. You will receive an email confirmation shortly."
-    });
+      const response = await axios.post("http://localhost:8000/kyc/submit", formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-    setTimeout(() => {
-      navigate("/status-check");
-    }, 2000);
+      toast({
+        title: "Application Submitted",
+        description: "Your KYC application has been submitted successfully. You will receive an email confirmation shortly."
+      });
+
+      // Store application data locally as backup
+      const applicationData = {
+        id: response.data.id || Date.now().toString(),
+        ...formData,
+        files: files,
+        status: "pending",
+        submissionDate: new Date().toISOString(),
+        notes: ""
+      };
+
+      const existingApplications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
+      existingApplications.push(applicationData);
+      localStorage.setItem("kycApplications", JSON.stringify(existingApplications));
+
+      setTimeout(() => {
+        navigate("/status-check");
+      }, 2000);
+
+    } catch (error: any) {
+      console.error("Error submitting KYC application:", error);
+      toast({
+        title: "Submission Failed",
+        description: error.response?.data?.detail || "Failed to submit application. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -237,8 +269,12 @@ const UserDashboard = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 py-3">
-                Submit KYC Application
+              <Button 
+                type="submit" 
+                className="w-full bg-blue-600 hover:bg-blue-700 py-3"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Submitting..." : "Submit KYC Application"}
               </Button>
             </form>
           </CardContent>

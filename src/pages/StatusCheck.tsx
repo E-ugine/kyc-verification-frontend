@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,21 +5,57 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Search, CheckCircle, Clock, XCircle, AlertCircle } from "lucide-react";
+import { ArrowLeft, Search, CheckCircle, Clock, XCircle, AlertCircle, Loader2 } from "lucide-react";
+import axios from "axios";
 
 const StatusCheck = () => {
   const [searchValue, setSearchValue] = useState("");
   const [application, setApplication] = useState<any>(null);
   const [searched, setSearched] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSearch = () => {
-    const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-    const found = applications.find((app: any) => 
-      app.email === searchValue || app.idNumber === searchValue
-    );
-    
-    setApplication(found || null);
+  const handleSearch = async () => {
+    if (!searchValue.trim()) {
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
     setSearched(true);
+
+    try {
+      // Try to fetch from backend API first
+      const response = await axios.get(`http://localhost:8000/kyc/status/${searchValue}`);
+      setApplication(response.data);
+    } catch (apiError: any) {
+      console.error("API error:", apiError);
+      
+      if (axios.isAxiosError(apiError) && apiError.response?.status === 404) {
+        // Application not found in backend, try localStorage as fallback
+        const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
+        const found = applications.find((app: any) => 
+          app.email === searchValue || app.idNumber === searchValue
+        );
+        
+        if (found) {
+          setApplication(found);
+        } else {
+          setApplication(null);
+        }
+      } else {
+        // Other API errors
+        setError("Failed to check status. Please try again.");
+        // Still try localStorage as fallback
+        const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
+        const found = applications.find((app: any) => 
+          app.email === searchValue || app.idNumber === searchValue
+        );
+        setApplication(found || null);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -72,6 +107,12 @@ const StatusCheck = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+                
                 <div className="space-y-2">
                   <Label htmlFor="search">Email or ID Number</Label>
                   <Input
@@ -80,18 +121,31 @@ const StatusCheck = () => {
                     onChange={(e) => setSearchValue(e.target.value)}
                     placeholder="Enter your email or ID number"
                     className="border-slate-300 focus:border-blue-500"
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSearch()}
                   />
                 </div>
-                <Button onClick={handleSearch} className="w-full bg-blue-600 hover:bg-blue-700">
-                  <Search className="h-4 w-4 mr-2" />
-                  Check Status
+                <Button 
+                  onClick={handleSearch} 
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={isLoading || !searchValue.trim()}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking Status...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      Check Status
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          {searched && (
+          {searched && !isLoading && (
             <Card className="shadow-lg border-0">
               <CardHeader>
                 <CardTitle>Search Results</CardTitle>
@@ -101,10 +155,10 @@ const StatusCheck = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
                       <div>
-                        <h3 className="font-semibold text-lg text-slate-800">{application.fullName}</h3>
-                        <p className="text-sm text-slate-600">ID: {application.idNumber}</p>
+                        <h3 className="font-semibold text-lg text-slate-800">{application.fullName || application.full_name}</h3>
+                        <p className="text-sm text-slate-600">ID: {application.idNumber || application.id_number}</p>
                         <p className="text-sm text-slate-600">
-                          Submitted: {new Date(application.submissionDate).toLocaleDateString()}
+                          Submitted: {new Date(application.submissionDate || application.submission_date).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="text-right">
@@ -123,10 +177,10 @@ const StatusCheck = () => {
                           {application.status === "approved" && "Congratulations! Your identity has been verified successfully."}
                           {application.status === "rejected" && "Your application was not approved. Please see the reason below and resubmit if needed."}
                         </p>
-                        {application.status === "rejected" && application.notes && (
+                        {application.status === "rejected" && (application.notes || application.rejection_reason) && (
                           <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
                             <h5 className="text-sm font-semibold text-red-800 mb-1">Rejection Reason:</h5>
-                            <p className="text-sm text-red-700">{application.notes}</p>
+                            <p className="text-sm text-red-700">{application.notes || application.rejection_reason}</p>
                           </div>
                         )}
                       </div>
