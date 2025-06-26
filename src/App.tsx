@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,7 +9,7 @@ import StatusCheck from "./pages/StatusCheck";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminDashboardNew from "./pages/AdminDashboardNew";
 import AdminLogin from "./pages/AdminLogin";
-import ApplicationDetail from "./pages/ApplicationDetail";
+import AdminApplicationView from "./pages/AdminApplicationView";
 import NotFound from "./pages/NotFound";
 import PrivateRoute from "./components/PrivateRoute";
 
@@ -44,10 +43,10 @@ const App = () => (
             } 
           />
           <Route 
-            path="/admin/application/:id" 
+            path="/admin/view/:id" 
             element={
               <PrivateRoute>
-                <ApplicationDetail />
+                <AdminApplicationView />
               </PrivateRoute>
             } 
           />
