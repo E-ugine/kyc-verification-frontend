@@ -233,7 +233,7 @@ const ApplicationDetail = () => {
                             onError={(e) => {
                               // Fallback if image fails to load
                               e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling.style.display = 'block';
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
                             }}
                           />
                           <div style={{ display: 'none' }}>
@@ -264,7 +264,7 @@ const ApplicationDetail = () => {
                             onError={(e) => {
                               // Fallback if image fails to load
                               e.currentTarget.style.display = 'none';
-                              e.currentTarget.nextElementSibling.style.display = 'block';
+                              (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
                             }}
                           />
                           <div style={{ display: 'none' }}>
