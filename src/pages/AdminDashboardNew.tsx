@@ -1,10 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ArrowLeft, Search, Eye, Filter, Users, Clock, CheckCircle, XCircle, LogOut, Loader2 } from "lucide-react";
 import axios from "axios";
 
@@ -29,10 +29,6 @@ const AdminDashboardNew = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedApp, setSelectedApp] = useState<KYCApplication | null>(null);
-  const [showRejectDialog, setShowRejectDialog] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -67,7 +63,7 @@ const AdminDashboardNew = () => {
 
       const response = await axios.get("http://localhost:8000/admin/all", {
         headers: {
-          Authorization:`Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
       });
       setApplications(response.data);
@@ -89,67 +85,8 @@ const AdminDashboardNew = () => {
     }
   };
 
-  const handleApprove = async (id: string) => {
-    setActionLoading(id);
-    try {
-      const token = localStorage.getItem("adminToken");
-      await axios.put(`http://localhost:8000/admin/verify/${id}`, {
-        status: "approved"
-      }, {
-        headers: {
-          Authorization: token
-        }
-      });
-      
-      // Update local state
-      const updated = applications.map(app => 
-        app.id === id ? { ...app, status: "approved" as const } : app
-      );
-      setApplications(updated);
-      setSelectedApp(null);
-    } catch (error) {
-      console.error("Error approving application:", error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        localStorage.removeItem("adminToken");
-        navigate("/admin/login");
-      }
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!selectedApp || !rejectReason.trim()) return;
-    
-    setActionLoading(selectedApp.id);
-    try {
-      const token = localStorage.getItem("adminToken");
-      await axios.put(`http://localhost:8000/admin/verify/${selectedApp.id}`, {
-        status: "rejected",
-        reason: rejectReason
-      }, {
-        headers: {
-          Authorization: token
-        }
-      });
-      
-      // Update local state
-      const updated = applications.map(app => 
-        app.id === selectedApp.id ? { ...app, status: "rejected" as const, notes: rejectReason } : app
-      );
-      setApplications(updated);
-      setSelectedApp(null);
-      setShowRejectDialog(false);
-      setRejectReason("");
-    } catch (error) {
-      console.error("Error rejecting application:", error);
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        localStorage.removeItem("adminToken");
-        navigate("/admin/login");
-      }
-    } finally {
-      setActionLoading(null);
-    }
+  const handleViewApplication = (id: string) => {
+    navigate(`/admin/view/${id}`);
   };
 
   const handleLogout = () => {
@@ -318,7 +255,7 @@ const AdminDashboardNew = () => {
         <Card className="border-0 shadow-md">
           <CardHeader>
             <CardTitle>Applications ({filteredApplications.length})</CardTitle>
-            <CardDescription>Click on any application to view details and take action</CardDescription>
+            <CardDescription>Click "View" to see full application details</CardDescription>
           </CardHeader>
           <CardContent>
             {filteredApplications.length === 0 ? (
@@ -354,7 +291,7 @@ const AdminDashboardNew = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setSelectedApp(app)}
+                        onClick={() => handleViewApplication(app.id)}
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         View
@@ -366,151 +303,6 @@ const AdminDashboardNew = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* Application Detail Dialog */}
-        {selectedApp && (
-          <Dialog open={!!selectedApp} onOpenChange={() => setSelectedApp(null)}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Application Details - {selectedApp.fullName}</DialogTitle>
-                <DialogDescription>
-                  Review the submitted information and documents
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Personal Information */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">Personal Information</h3>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">Full Name</label>
-                      <p className="text-slate-800">{selectedApp.fullName}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">Date of Birth</label>
-                      <p className="text-slate-800">{selectedApp.dateOfBirth}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">ID Number</label>
-                      <p className="text-slate-800">{selectedApp.id_number}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">Country</label>
-                      <p className="text-slate-800">{selectedApp.country}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">Email</label>
-                      <p className="text-slate-800">{selectedApp.email}</p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">Address</label>
-                      <p className="text-slate-800">{selectedApp.address}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Documents */}
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">Documents</h3>
-                  {selectedApp.passportImage && (
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">Passport/ID</label>
-                      <img
-                        src={selectedApp.passportImage}
-                        alt="Passport/ID"
-                        className="mt-2 max-w-full h-48 object-cover rounded-lg border"
-                      />
-                    </div>
-                  )}
-                  {selectedApp.selfieImage && (
-                    <div>
-                      <label className="text-sm font-medium text-slate-600">Selfie</label>
-                      <img
-                        src={selectedApp.selfieImage}
-                        alt="Selfie"
-                        className="mt-2 max-w-full h-48 object-cover rounded-lg border"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {selectedApp.status === "rejected" && selectedApp.notes && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                  <h4 className="font-semibold text-red-800 mb-2">Rejection Reason:</h4>
-                  <p className="text-red-700">{selectedApp.notes}</p>
-                </div>
-              )}
-
-              <DialogFooter className="flex gap-2">
-                {selectedApp.status === "pending" && (
-                  <>
-                    <Button
-                      onClick={() => handleApprove(selectedApp.id)}
-                      className="bg-green-600 hover:bg-green-700"
-                      disabled={actionLoading === selectedApp.id}
-                    >
-                      {actionLoading === selectedApp.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Approve
-                    </Button>
-                    <Button
-                      onClick={() => setShowRejectDialog(true)}
-                      variant="destructive"
-                      disabled={actionLoading === selectedApp.id}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Reject
-                    </Button>
-                  </>
-                )}
-                <Button variant="outline" onClick={() => setSelectedApp(null)}>
-                  Close
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Reject Dialog */}
-        <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reject Application</DialogTitle>
-              <DialogDescription>
-                Please provide a reason for rejecting this application.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <textarea
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Enter rejection reason..."
-                className="w-full p-3 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                rows={4}
-              />
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowRejectDialog(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleReject}
-                variant="destructive"
-                disabled={!rejectReason.trim() || actionLoading === selectedApp?.id}
-              >
-                {actionLoading === selectedApp?.id ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Reject Application
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
