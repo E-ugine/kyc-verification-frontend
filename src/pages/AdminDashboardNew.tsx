@@ -1,26 +1,38 @@
-
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, Eye, Filter, Users, Clock, CheckCircle, XCircle, LogOut, Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  ArrowLeft,
+  Search,
+  Eye,
+  Filter,
+  Users,
+  Clock,
+  CheckCircle,
+  XCircle,
+  LogOut,
+  Loader2,
+  RefreshCw
+} from "lucide-react";
 import axios from "axios";
 
 interface KYCApplication {
   id: string;
-  fullName: string;
+  full_name: string;
   country: string;
   id_number: string;
   email: string;
-  dateOfBirth: string;
-  address: string;
-  passportImage?: string;
-  selfieImage?: string;
-  status: "pending" | "approved" | "rejected";
-  submissionDate: string;
-  notes?: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  created_at: string;
+  address?: string;
+  dob?: string;
+  selfie_path?: string;
+  id_doc_path?: string;
+  rejection_reason?: string;
 }
 
 const AdminDashboardNew = () => {
@@ -29,60 +41,101 @@ const AdminDashboardNew = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchApplications();
-  }, []);
+  }, [refreshTrigger]);
 
   useEffect(() => {
-    let filtered = applications;
-
-    if (searchTerm) {
-      filtered = filtered.filter(app => 
-        app.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.id_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        app.email.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(app => app.status === statusFilter);
-    }
-
-    setFilteredApplications(filtered);
+    filterApplications();
   }, [searchTerm, statusFilter, applications]);
 
   const fetchApplications = async () => {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem("adminToken");
       if (!token) {
         navigate("/admin/login");
         return;
       }
 
-      const response = await axios.get("http://localhost:8000/admin/all", {
+      const response = await axios.get("http://localhost:8000/kyc/applications", {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
-      setApplications(response.data);
-      setFilteredApplications(response.data);
+
+      const formattedData = response.data.map((app: any) => ({
+        ...app,
+        full_name: app.full_name || "Unknown",
+        status: app.status || "PENDING",
+        created_at: app.created_at || new Date().toISOString()
+      }));
+
+      setApplications(formattedData);
+      filterApplications();
     } catch (error) {
       console.error("Error fetching applications:", error);
-      // If token is invalid, redirect to login
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        localStorage.removeItem("adminToken");
-        navigate("/admin/login");
-        return;
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem("adminToken");
+          navigate("/admin/login");
+          toast({
+            title: "Session expired",
+            description: "Please login again",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: error.response?.data?.message || "Failed to fetch applications",
+            variant: "destructive"
+          });
+        }
       }
-      // Fallback to localStorage data if API fails
-      const stored = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-      setApplications(stored);
-      setFilteredApplications(stored);
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
+  };
+
+  const filterApplications = () => {
+    let filtered = [...applications];
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(app =>
+        (app.full_name?.toLowerCase().includes(term) ||
+        (app.id_number?.toLowerCase().includes(term)) ||
+        (app.email?.toLowerCase().includes(term))
+      ));
+    }
+
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(app =>
+        app.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    }
+
+    setFilteredApplications(filtered);
+  };
+
+  const refreshApplications = () => {
+    setIsRefreshing(true);
+    setRefreshTrigger(prev => prev + 1);
+    toast({
+      title: "Refreshing applications",
+      description: "Fetching latest data...",
+    });
+  };
+
+  const handleStatusFilterChange = (status: string) => {
+    setStatusFilter(status);
+    refreshApplications();
   };
 
   const handleViewApplication = (id: string) => {
@@ -92,34 +145,37 @@ const AdminDashboardNew = () => {
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     navigate("/admin/login");
+    toast({
+      title: "Logged out successfully",
+      description: "You have been signed out",
+    });
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "approved":
+    switch (status.toUpperCase()) {
+      case "APPROVED":
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
-      case "rejected":
+      case "REJECTED":
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
-      case "pending":
+      case "PENDING":
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
       default:
-        return <Badge variant="secondary">Unknown</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
   const getStatusCounts = () => {
-    const counts = {
+    return {
       total: applications.length,
-      pending: applications.filter(app => app.status === "pending").length,
-      approved: applications.filter(app => app.status === "approved").length,
-      rejected: applications.filter(app => app.status === "rejected").length,
+      pending: applications.filter(app => app.status === "PENDING").length,
+      approved: applications.filter(app => app.status === "APPROVED").length,
+      rejected: applications.filter(app => app.status === "REJECTED").length,
     };
-    return counts;
   };
 
   const counts = getStatusCounts();
 
-  if (isLoading) {
+  if (isLoading && !isRefreshing) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <div className="flex items-center space-x-2">
@@ -142,10 +198,20 @@ const AdminDashboardNew = () => {
             <h1 className="text-3xl font-bold text-slate-800 mb-2">Admin Dashboard</h1>
             <p className="text-slate-600">Review and manage KYC applications</p>
           </div>
-          <Button onClick={handleLogout} variant="outline" className="flex items-center">
-            <LogOut className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={refreshApplications} variant="outline" disabled={isRefreshing}>
+              {isRefreshing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Refresh
+            </Button>
+            <Button onClick={handleLogout} variant="outline">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -202,10 +268,15 @@ const AdminDashboardNew = () => {
         {/* Filters */}
         <Card className="mb-6 border-0 shadow-md">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Filter className="h-5 w-5 mr-2 text-blue-600" />
-              Search & Filter
-            </CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="flex items-center">
+                <Filter className="h-5 w-5 mr-2 text-blue-600" />
+                Search & Filter
+              </CardTitle>
+              <div className="text-sm text-slate-500">
+                Last updated: {new Date().toLocaleTimeString()}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4">
@@ -220,28 +291,28 @@ const AdminDashboardNew = () => {
               <div className="flex gap-2">
                 <Button
                   variant={statusFilter === "all" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("all")}
+                  onClick={() => handleStatusFilterChange("all")}
                   size="sm"
                 >
                   All
                 </Button>
                 <Button
                   variant={statusFilter === "pending" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("pending")}
+                  onClick={() => handleStatusFilterChange("pending")}
                   size="sm"
                 >
                   Pending
                 </Button>
                 <Button
                   variant={statusFilter === "approved" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("approved")}
+                  onClick={() => handleStatusFilterChange("approved")}
                   size="sm"
                 >
                   Approved
                 </Button>
                 <Button
                   variant={statusFilter === "rejected" ? "default" : "outline"}
-                  onClick={() => setStatusFilter("rejected")}
+                  onClick={() => handleStatusFilterChange("rejected")}
                   size="sm"
                 >
                   Rejected
@@ -263,6 +334,10 @@ const AdminDashboardNew = () => {
                 <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">No Applications Found</h3>
                 <p className="text-slate-600">No applications match your current search criteria.</p>
+                <Button onClick={refreshApplications} variant="ghost" className="mt-4">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -274,14 +349,14 @@ const AdminDashboardNew = () => {
                     <div className="flex-1">
                       <div className="flex items-center space-x-4">
                         <div>
-                          <h3 className="font-semibold text-slate-800">{app.fullName}</h3>
+                          <h3 className="font-semibold text-slate-800">{app.full_name}</h3>
                           <p className="text-sm text-slate-600">ID: {app.id_number}</p>
                           <p className="text-sm text-slate-600">Country: {app.country}</p>
                         </div>
                         <div className="hidden md:block">
                           <p className="text-sm text-slate-600">{app.email}</p>
                           <p className="text-sm text-slate-500">
-                            {new Date(app.submissionDate).toLocaleDateString()}
+                            Submitted: {new Date(app.created_at).toLocaleDateString()}
                           </p>
                         </div>
                       </div>
