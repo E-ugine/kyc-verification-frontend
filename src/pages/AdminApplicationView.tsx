@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Calendar, MapPin, Mail, FileText, Camera, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import axios from "axios";
+import { useToast } from "@/components/ui/use-toast";
 
 interface KYCApplication {
   id: number;
@@ -28,6 +29,7 @@ const AdminApplicationView = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (id) {
@@ -37,13 +39,13 @@ const AdminApplicationView = () => {
 
   const fetchApplication = async (applicationId: string) => {
     try {
+      setIsLoading(true);
       const token = localStorage.getItem("adminToken");
       if (!token) {
         navigate("/admin/login");
         return;
       }
 
-      // Use the correct KYC endpoint
       const response = await axios.get(`http://localhost:8000/kyc/application/${applicationId}`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -77,22 +79,40 @@ const AdminApplicationView = () => {
     setActionLoading("approve");
     try {
       const token = localStorage.getItem("adminToken");
-      // You'll need to create an admin endpoint for status updates
-      await axios.put(`http://localhost:8000/admin/kyc/update-status/${application.id}`, {
-        status: "APPROVED"
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const response = await axios.patch(
+        `http://localhost:8000/kyc/admin/review/${application.id}`,
+        {
+          action: "APPROVED"
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
+      );
+      
+      setApplication(response.data);
+      toast({
+        title: "Application Approved",
+        description: "The KYC application has been approved successfully",
+        variant: "default"
       });
       
-      setApplication(prev => prev ? { ...prev, status: "APPROVED" } : null);
+      // Redirect after a short delay
+      setTimeout(() => {
+        navigate("/admin");
+      }, 1500);
     } catch (error) {
       console.error("Error approving application:", error);
-      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
-        localStorage.removeItem("adminToken");
-        navigate("/admin/login");
+      let errorMessage = "Failed to approve the application";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.detail || errorMessage;
       }
+      toast({
+        title: "Approval Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setActionLoading(null);
     }
@@ -101,29 +121,42 @@ const AdminApplicationView = () => {
   const handleReject = async () => {
     if (!application) return;
 
-    const reason = prompt("Please provide a reason for rejection:");
+    const reason = window.prompt("Please provide a reason for rejection:");
     if (!reason) return;
     
     setActionLoading("reject");
     try {
       const token = localStorage.getItem("adminToken");
-      // You'll need to create an admin endpoint for status updates
-      await axios.put(`http://localhost:8000/admin/kyc/update-status/${application.id}`, {
-        status: "REJECTED",
-        rejection_reason: reason
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const response = await axios.patch(
+        `http://localhost:8000/kyc/admin/review/${application.id}`,
+        {
+          action: "REJECTED",
+          rejection_reason: reason
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      });
+      );
       
-      setApplication(prev => prev ? { ...prev, status: "REJECTED", rejection_reason: reason } : null);
+      setApplication(response.data);
+      toast({
+        title: "Application Rejected",
+        description: "The KYC application has been rejected",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Error rejecting application:", error);
-      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
-        localStorage.removeItem("adminToken");
-        navigate("/admin/login");
+      let errorMessage = "Failed to reject the application";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.detail || errorMessage;
       }
+      toast({
+        title: "Rejection Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setActionLoading(null);
     }

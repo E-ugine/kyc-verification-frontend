@@ -2,37 +2,22 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  ArrowLeft,
-  Search,
-  Eye,
-  Filter,
-  Users,
-  Clock,
-  CheckCircle,
-  XCircle,
-  LogOut,
-  Loader2,
-  RefreshCw
-} from "lucide-react";
+import { ArrowLeft, Search, Eye, Filter, Users, Clock, CheckCircle, XCircle, LogOut, Loader2, RefreshCw } from "lucide-react";
 import axios from "axios";
+import { KYCReviewActions } from "./KYCReviewActions";
 
 interface KYCApplication {
-  id: string;
+  id: number;
   full_name: string;
   country: string;
   id_number: string;
-  email: string;
+  email?: string;
   status: "PENDING" | "APPROVED" | "REJECTED";
   created_at: string;
   address?: string;
   dob?: string;
-  selfie_path?: string;
-  id_doc_path?: string;
-  rejection_reason?: string;
 }
 
 const AdminDashboardNew = () => {
@@ -42,13 +27,12 @@ const AdminDashboardNew = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchApplications();
-  }, [refreshTrigger]);
+  }, []);
 
   useEffect(() => {
     filterApplications();
@@ -69,15 +53,7 @@ const AdminDashboardNew = () => {
         }
       });
 
-      const formattedData = response.data.map((app: any) => ({
-        ...app,
-        full_name: app.full_name || "Unknown",
-        status: app.status || "PENDING",
-        created_at: app.created_at || new Date().toISOString()
-      }));
-
-      setApplications(formattedData);
-      filterApplications();
+      setApplications(response.data);
     } catch (error) {
       console.error("Error fetching applications:", error);
       if (axios.isAxiosError(error)) {
@@ -110,9 +86,9 @@ const AdminDashboardNew = () => {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(app =>
         (app.full_name?.toLowerCase().includes(term) ||
-        (app.id_number?.toLowerCase().includes(term)) ||
-        (app.email?.toLowerCase().includes(term))
-      ));
+        app.id_number?.toLowerCase().includes(term) ||
+        app.email?.toLowerCase().includes(term))
+      );
     }
 
     if (statusFilter !== "all") {
@@ -126,7 +102,7 @@ const AdminDashboardNew = () => {
 
   const refreshApplications = () => {
     setIsRefreshing(true);
-    setRefreshTrigger(prev => prev + 1);
+    fetchApplications();
     toast({
       title: "Refreshing applications",
       description: "Fetching latest data...",
@@ -135,10 +111,9 @@ const AdminDashboardNew = () => {
 
   const handleStatusFilterChange = (status: string) => {
     setStatusFilter(status);
-    refreshApplications();
   };
 
-  const handleViewApplication = (id: string) => {
+  const handleViewApplication = (id: number) => {
     navigate(`/admin/view/${id}`);
   };
 
@@ -151,17 +126,10 @@ const AdminDashboardNew = () => {
     });
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "APPROVED":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
-      case "REJECTED":
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
-      case "PENDING":
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>;
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
+  const handleStatusChange = (id: number, newStatus: "PENDING" | "APPROVED" | "REJECTED") => {
+    setApplications(prev => prev.map(app => 
+      app.id === id ? { ...app, status: newStatus } : app
+    ));
   };
 
   const getStatusCounts = () => {
@@ -344,29 +312,31 @@ const AdminDashboardNew = () => {
                 {filteredApplications.map((app) => (
                   <div
                     key={app.id}
-                    className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-4">
+                    <div className="flex-1 mb-4 sm:mb-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                         <div>
                           <h3 className="font-semibold text-slate-800">{app.full_name}</h3>
                           <p className="text-sm text-slate-600">ID: {app.id_number}</p>
-                          <p className="text-sm text-slate-600">Country: {app.country}</p>
                         </div>
-                        <div className="hidden md:block">
-                          <p className="text-sm text-slate-600">{app.email}</p>
-                          <p className="text-sm text-slate-500">
-                            Submitted: {new Date(app.created_at).toLocaleDateString()}
-                          </p>
+                        <div className="text-sm text-slate-600">
+                          <p>Country: {app.country}</p>
+                          <p>Submitted: {new Date(app.created_at).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      {getStatusBadge(app.status)}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                      <KYCReviewActions
+                        applicationId={app.id}
+                        currentStatus={app.status}
+                        onStatusChange={(newStatus) => handleStatusChange(app.id, newStatus)}
+                      />
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleViewApplication(app.id)}
+                        className="w-full sm:w-auto"
                       >
                         <Eye className="h-4 w-4 mr-2" />
                         View

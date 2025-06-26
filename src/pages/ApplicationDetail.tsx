@@ -6,86 +6,115 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, CheckCircle, XCircle, FileText, User, Calendar, MapPin, Mail, Hash } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, FileText, User, Calendar, MapPin, Mail, Hash, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import axios from "axios";
+
+interface KYCApplication {
+  id: number;
+  full_name: string;
+  country: string;
+  id_number: string;
+  email?: string;
+  dob: string;
+  address: string;
+  id_doc?: string;
+  selfie?: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  created_at: string;
+  rejection_reason?: string;
+}
 
 const ApplicationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [application, setApplication] = useState<any>(null);
+  const [application, setApplication] = useState<KYCApplication | null>(null);
   const [notes, setNotes] = useState("");
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Replace localStorage with actual API call
     const fetchApplication = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/kyc/${id}`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Fetched application:', data); // Debug log
-          setApplication(data);
-          setNotes(data.rejection_reason || "");
-        } else {
-          console.error('Failed to fetch application');
+        setIsLoading(true);
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+          navigate("/admin/login");
+          return;
         }
+
+        const response = await axios.get(`http://localhost:8000/kyc/application/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        
+        setApplication(response.data);
+        setNotes(response.data.rejection_reason || "");
       } catch (error) {
         console.error('Error fetching application:', error);
-        // Fallback to localStorage for demo purposes
-        const applications = JSON.parse(localStorage.getItem("kycApplications") || "[]");
-        const found = applications.find((app: any) => app.id === id);
-        if (found) {
-          setApplication(found);
-          setNotes(found.notes || "");
-        }
+        toast({
+          title: "Error",
+          description: "Failed to load application details",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchApplication();
   }, [id]);
 
-  const updateApplicationStatus = async (status: string, reason: string = "") => {
+  const updateApplicationStatus = async (action: "APPROVED" | "REJECTED", reason?: string) => {
     try {
-      const response = await fetch(`http://localhost:8000/kyc/${id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        navigate("/admin/login");
+        return;
+      }
+
+      const response = await axios.patch(
+        `http://localhost:8000/kyc/admin/review/${id}`,
+        {
+          action,
+          rejection_reason: action === "REJECTED" ? reason : undefined
         },
-        body: JSON.stringify({
-          status: status,
-          rejection_reason: reason || notes
-        }),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      setApplication(response.data);
+      toast({
+        title: action === "APPROVED" ? "Application Approved" : "Application Rejected",
+        description: `The application has been ${action.toLowerCase()} successfully.`
       });
 
-      if (response.ok) {
-        const updatedApp = await response.json();
-        setApplication(updatedApp);
-        
-        toast({
-          title: status === "approved" ? "Application Approved" : "Application Rejected",
-          description: `The application has been ${status} successfully.`
-        });
-
-        setTimeout(() => {
-          navigate("/admin");
-        }, 2000);
-      } else {
-        throw new Error(`Failed to update application status`);
-      }
+      setTimeout(() => {
+        navigate("/admin");
+      }, 1500);
     } catch (error) {
       console.error('Error updating application:', error);
+      let errorMessage = "Failed to update application status";
+      if (axios.isAxiosError(error)) {
+        errorMessage = error.response?.data?.detail || errorMessage;
+      }
       toast({
         title: "Error",
-        description: "Failed to update application status. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
     }
   };
 
   const handleApprove = () => {
-    updateApplicationStatus("approved");
+    updateApplicationStatus("APPROVED");
     setShowApproveDialog(false);
   };
 
@@ -98,17 +127,52 @@ const ApplicationDetail = () => {
       });
       return;
     }
-    updateApplicationStatus("rejected", notes);
+    updateApplicationStatus("REJECTED", notes);
     setShowRejectDialog(false);
+  };
+
+  const saveNotes = async () => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        navigate("/admin/login");
+        return;
+      }
+
+      await axios.patch(
+        `http://localhost:8000/kyc/admin/review/${id}`,
+        {
+          notes
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        }
+      );
+
+      toast({
+        title: "Notes Saved",
+        description: "Your notes have been saved successfully."
+      });
+    } catch (error) {
+      console.error('Error saving notes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save notes. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "approved":
+      case "APPROVED":
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Approved</Badge>;
-      case "rejected":
+      case "REJECTED":
         return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Rejected</Badge>;
-      case "pending":
+      case "PENDING":
         return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending Review</Badge>;
       default:
         return <Badge variant="secondary">Unknown</Badge>;
@@ -124,6 +188,17 @@ const ApplicationDetail = () => {
       return 'Invalid Date';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+          <span className="text-slate-600">Loading application details...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (!application) {
     return (
@@ -231,7 +306,6 @@ const ApplicationDetail = () => {
                             alt="ID Document" 
                             className="max-w-full max-h-48 mx-auto mb-2 rounded"
                             onError={(e) => {
-                              // Fallback if image fails to load
                               e.currentTarget.style.display = 'none';
                               (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
                             }}
@@ -262,7 +336,6 @@ const ApplicationDetail = () => {
                             alt="Selfie" 
                             className="max-w-full max-h-48 mx-auto mb-2 rounded"
                             onError={(e) => {
-                              // Fallback if image fails to load
                               e.currentTarget.style.display = 'none';
                               (e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block';
                             }}
@@ -301,7 +374,7 @@ const ApplicationDetail = () => {
                 <div className="text-center">
                   {getStatusBadge(application.status)}
                 </div>
-                {application.status === "pending" && (
+                {application.status === "PENDING" && (
                   <div className="space-y-3">
                     <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
                       <DialogTrigger asChild>
@@ -383,33 +456,7 @@ const ApplicationDetail = () => {
                     className="min-h-[120px]"
                   />
                   <Button
-                    onClick={async () => {
-                      try {
-                        const response = await fetch(`http://localhost:8000/kyc/${id}/notes`, {
-                          method: "PUT",
-                          headers: {
-                            "Content-Type": "application/json",
-                          },
-                          body: JSON.stringify({ notes }),
-                        });
-
-                        if (response.ok) {
-                          toast({
-                            title: "Notes Saved",
-                            description: "Your notes have been saved successfully."
-                          });
-                        } else {
-                          throw new Error('Failed to save notes');
-                        }
-                      } catch (error) {
-                        console.error('Error saving notes:', error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to save notes. Please try again.",
-                          variant: "destructive"
-                        });
-                      }
-                    }}
+                    onClick={saveNotes}
                     variant="outline"
                     size="sm"
                   >
