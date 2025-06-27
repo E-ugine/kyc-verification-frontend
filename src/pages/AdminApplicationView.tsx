@@ -31,6 +31,22 @@ const AdminApplicationView = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Helper function to construct proper image URLs
+  const getImageUrl = (imagePath: string | undefined | null): string | undefined => {
+    if (!imagePath || imagePath === null || imagePath.trim() === '') return undefined;
+    
+    // If the path already starts with http, return as is
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Prepend the base URL for relative paths
+    const baseUrl = 'http://localhost:8000';
+    // Ensure we don't have double slashes
+    const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+    return `${baseUrl}${cleanPath}`;
+  };
+
   useEffect(() => {
     if (id) {
       fetchApplication(id);
@@ -321,12 +337,12 @@ const AdminApplicationView = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {application.id_doc && (
+              {application.id_doc && application.id_doc !== null && application.id_doc.trim() !== '' && (
                 <div>
                   <label className="text-sm font-medium text-slate-600 mb-2 block">ID Document</label>
                   <div className="border border-slate-200 rounded-lg p-2 bg-white">
                     <img
-                      src={application.id_doc}
+                      src={getImageUrl(application.id_doc)}
                       alt="ID Document"
                       className="w-full max-h-48 object-contain rounded"
                       onError={(e) => {
@@ -341,17 +357,18 @@ const AdminApplicationView = () => {
                     <div style={{ display: 'none' }} className="text-center py-8 text-slate-500">
                       <FileText className="h-8 w-8 mx-auto mb-2" />
                       <p>Image failed to load</p>
+                      <p className="text-xs mt-1">Path: {application.id_doc}</p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {application.selfie && (
+              {application.selfie && application.selfie !== null && application.selfie.trim() !== '' && (
                 <div>
                   <label className="text-sm font-medium text-slate-600 mb-2 block">Selfie</label>
                   <div className="border border-slate-200 rounded-lg p-2 bg-white">
                     <img
-                      src={application.selfie}
+                      src={getImageUrl(application.selfie)}
                       alt="Selfie"
                       className="w-full max-h-48 object-contain rounded"
                       onError={(e) => {
@@ -366,12 +383,14 @@ const AdminApplicationView = () => {
                     <div style={{ display: 'none' }} className="text-center py-8 text-slate-500">
                       <User className="h-8 w-8 mx-auto mb-2" />
                       <p>Image failed to load</p>
+                      <p className="text-xs mt-1">Path: {application.selfie}</p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {!application.id_doc && !application.selfie && (
+              {(!application.id_doc || application.id_doc === null || application.id_doc.trim() === '') && 
+               (!application.selfie || application.selfie === null || application.selfie.trim() === '') && (
                 <div className="text-center py-8 text-slate-500">
                   <FileText className="h-8 w-8 mx-auto mb-2" />
                   <p>No documents uploaded</p>
