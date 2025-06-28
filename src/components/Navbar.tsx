@@ -7,6 +7,16 @@ import { Button } from '@/components/ui/button';
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  };
+
   return (
     <nav className="sticky top-0 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/20 dark:border-gray-700/30 z-50">
       <div className="container mx-auto px-4 py-4">
@@ -26,15 +36,24 @@ const Navbar = () => {
 
           {/* Navigation Links - Hidden on mobile */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#features" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+            <button 
+              onClick={() => scrollToSection('features')}
+              className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+            >
               Features
-            </a>
-            <a href="#about" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+            </button>
+            <button 
+              onClick={() => scrollToSection('about')}
+              className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+            >
               About
-            </a>
-            <a href="#contact" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+            </button>
+            <button 
+              onClick={() => scrollToSection('contact')}
+              className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+            >
               Contact
-            </a>
+            </button>
           </div>
 
           {/* Right side buttons */}

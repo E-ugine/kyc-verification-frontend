@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, Users, CheckCircle, ArrowRight, Sparkles, Zap, Eye } from "lucide-react";
+import { Shield, Users, CheckCircle, ArrowRight, Sparkles, Zap, Eye, Clock, Globe, Lock, FileCheck, UserCheck, BarChart3, Mail, Phone, MapPin } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import TrustSection from "@/components/TrustSection";
 import Footer from "@/components/Footer";
@@ -163,8 +163,296 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+              Powerful Features for Modern KYC
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-lg">
+              Built specifically for African fintech companies, our platform delivers enterprise-grade verification with unmatched speed and accuracy.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="group p-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200/20 dark:border-gray-700/30">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Real-time Verification</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Complete identity verification in under 60 seconds with our AI-powered document analysis and biometric matching.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="group p-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200/20 dark:border-gray-700/30">
+              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Globe className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Multi-Country Support</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Support for ID documents from 15+ African countries including Nigeria, Kenya, Ghana, and South Africa.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="group p-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200/20 dark:border-gray-700/30">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <Lock className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Bank-Grade Security</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                End-to-end encryption, SOC 2 Type II compliance, and ISO 27001 certification ensure maximum data protection.
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="group p-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200/20 dark:border-gray-700/30">
+              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <FileCheck className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Document Authentication</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Advanced OCR and machine learning algorithms detect fraudulent documents with 99.5% accuracy rate.
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="group p-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200/20 dark:border-gray-700/30">
+              <div className="w-12 h-12 bg-gradient-to-r from-teal-500 to-cyan-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <UserCheck className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Biometric Matching</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Facial recognition technology ensures the person submitting documents matches their official ID photo.
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="group p-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200/20 dark:border-gray-700/30">
+              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <BarChart3 className="h-6 w-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Analytics Dashboard</h3>
+              <p className="text-gray-600 dark:text-gray-400">
+                Comprehensive reporting and analytics to track verification rates, fraud detection, and compliance metrics.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Trust Section */}
       <TrustSection />
+
+      {/* About Section */}
+      <section id="about" className="py-20 bg-gray-50/50 dark:bg-gray-900/50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                About KYC Pro
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
+                Empowering African fintech with cutting-edge identity verification technology
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Our Mission</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                  KYC Pro was founded with a simple yet powerful mission: to democratize access to world-class identity verification technology for African fintech companies. We believe that every business, regardless of size, should have access to the same enterprise-grade KYC solutions used by global financial institutions.
+                </p>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                  Our platform is built specifically for the African market, understanding the unique challenges of operating across multiple countries with different regulatory requirements, document types, and verification standards.
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-gray-700 dark:text-gray-300">Founded in 2023 by former fintech executives</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-gray-700 dark:text-gray-300">Backed by leading African venture capital funds</span>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-gray-700 dark:text-gray-300">Headquartered in Lagos with offices across Africa</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200/20 dark:border-gray-700/30">
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Why Choose KYC Pro?</h3>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white">African-First Approach</h4>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Built for African markets with local expertise and regulatory knowledge.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white">Enterprise-Grade Security</h4>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Bank-level security with SOC 2 and ISO 27001 compliance.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white">Developer-Friendly APIs</h4>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">RESTful APIs with comprehensive documentation and SDKs.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <CheckCircle className="h-6 w-6 text-green-500 mt-1 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white">24/7 Support</h4>
+                      <p className="text-gray-600 dark:text-gray-400 text-sm">Dedicated support team with expertise in African fintech.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-20 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl sm:text-4xl font-bold text-gray-800 dark:text-white mb-4">
+                Get in Touch
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
+                Ready to streamline your KYC process? Our team is here to help you get started.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              {/* Contact Information */}
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-8">Contact Information</h3>
+                <div className="space-y-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Mail className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white mb-1">Email</h4>
+                      <p className="text-gray-600 dark:text-gray-400">support@kycpro.com</p>
+                      <p className="text-gray-600 dark:text-gray-400">sales@kycpro.com</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Phone className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white mb-1">Phone</h4>
+                      <p className="text-gray-600 dark:text-gray-400">+234 800 123 4567</p>
+                      <p className="text-gray-600 dark:text-gray-400">+254 700 123 456</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-violet-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <MapPin className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 dark:text-white mb-1">Offices</h4>
+                      <p className="text-gray-600 dark:text-gray-400">Lagos, Nigeria (HQ)</p>
+                      <p className="text-gray-600 dark:text-gray-400">Nairobi, Kenya</p>
+                      <p className="text-gray-600 dark:text-gray-400">Cape Town, South Africa</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200/30 dark:border-blue-700/30">
+                  <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Business Hours</h4>
+                  <p className="text-blue-700 dark:text-blue-400 text-sm">Monday - Friday: 8:00 AM - 6:00 PM (WAT)</p>
+                  <p className="text-blue-700 dark:text-blue-400 text-sm">24/7 Technical Support Available</p>
+                </div>
+              </div>
+
+              {/* Contact Form */}
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-gray-200/20 dark:border-gray-700/30">
+                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Send us a Message</h3>
+                <form className="space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        First Name
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Last Name
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        placeholder="Doe"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="john@company.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Company
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      placeholder="Your Company"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Message
+                    </label>
+                    <textarea
+                      rows={4}
+                      className="w-full px-4 py-3 bg-white/50 dark:bg-gray-700/50 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+                      placeholder="Tell us about your KYC requirements..."
+                    ></textarea>
+                  </div>
+
+                  <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                    Send Message
+                  </Button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
       <Footer />
