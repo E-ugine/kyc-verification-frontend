@@ -127,8 +127,8 @@ const UserDashboard = () => {
     formDataToSend.append("id_number", formData.idNumber);
     formDataToSend.append("country", formData.country);
     formDataToSend.append("address", formData.address);
-    formDataToSend.append("selfie_image", files.selfie!);
-    formDataToSend.append("id_document", files.passport!);
+    formDataToSend.append("selfie", files.selfie!);
+    formDataToSend.append("id_doc", files.passport!);
 
     const response = await fetch("http://localhost:8000/kyc/submit", {
       method: "POST",
