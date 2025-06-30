@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,7 +53,7 @@ const AdminDashboardNew = () => {
       setApplications(response.data);
     } catch (error) {
       console.error("Error fetching applications:", error);
-      if (api.isAxiosError && api.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         if (error.response?.status === 401) {
           localStorage.removeItem("adminToken");
           navigate("/admin/login");

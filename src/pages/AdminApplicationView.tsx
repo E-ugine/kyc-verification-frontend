@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,7 +69,7 @@ const AdminApplicationView = () => {
       setError(null);
     } catch (error) {
       console.error("Error fetching application:", error);
-      if (api.isAxiosError && api.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         if (error.response?.status === 401 || error.response?.status === 403) {
           localStorage.removeItem("adminToken");
           navigate("/admin/login");
@@ -110,7 +111,7 @@ const AdminApplicationView = () => {
     } catch (error) {
       console.error("Error approving application:", error);
       let errorMessage = "Failed to approve the application";
-      if (api.isAxiosError && api.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.detail || errorMessage;
       }
       toast({
@@ -145,7 +146,7 @@ const AdminApplicationView = () => {
     } catch (error) {
       console.error("Error rejecting application:", error);
       let errorMessage = "Failed to reject the application";
-      if (api.isAxiosError && api.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.detail || errorMessage;
       }
       toast({

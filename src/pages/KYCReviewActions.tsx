@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import axios from "axios";
 import api from "@/lib/api";
 
 interface KYCReviewActionsProps {
@@ -47,7 +48,7 @@ export const KYCReviewActions = ({
     } catch (error) {
       console.error(`Error ${action.toLowerCase()} application:`, error);
       let errorMessage = `Failed to ${action.toLowerCase()} the application`;
-      if (api.isAxiosError && api.isAxiosError(error)) {
+      if (axios.isAxiosError(error)) {
         errorMessage = error.response?.data?.detail || errorMessage;
       }
       toast({
