@@ -25,8 +25,9 @@ const StatusCheck = () => {
     setSearched(true);
 
     try {
-      // Try to fetch from backend API first
-      const response = await axios.get(`http://localhost:8000/kyc/status/${searchValue}`);
+      // Use environment variable for backend API
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await axios.get(`${baseUrl}/kyc/status/${searchValue}`);
       setApplication(response.data);
     } catch (apiError: any) {
       console.error("API error:", apiError);
