@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, User, Calendar, MapPin, Mail, FileText, Camera, CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import axios from "axios";
 import { useToast } from "@/components/ui/use-toast";
+import api from "@/lib/api";
 
 interface KYCApplication {
   id: number;
@@ -40,8 +41,8 @@ const AdminApplicationView = () => {
       return imagePath;
     }
     
-    // Prepend the base URL for relative paths
-    const baseUrl = 'http://localhost:8000';
+    // Use the environment variable for the base URL
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
     // Ensure we don't have double slashes
     const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     return `${baseUrl}${cleanPath}`;
@@ -62,17 +63,12 @@ const AdminApplicationView = () => {
         return;
       }
 
-      const response = await axios.get(`http://localhost:8000/kyc/application/${applicationId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
+      const response = await api.get(`/kyc/application/${applicationId}`);
       setApplication(response.data);
       setError(null);
     } catch (error) {
       console.error("Error fetching application:", error);
-      if (axios.isAxiosError(error)) {
+      if (api.isAxiosError && api.isAxiosError(error)) {
         if (error.response?.status === 401 || error.response?.status === 403) {
           localStorage.removeItem("adminToken");
           navigate("/admin/login");
@@ -83,6 +79,8 @@ const AdminApplicationView = () => {
         } else {
           setError("Failed to load application details");
         }
+      } else {
+        setError("Network error - please check your connection");
       }
     } finally {
       setIsLoading(false);
@@ -94,18 +92,9 @@ const AdminApplicationView = () => {
     
     setActionLoading("approve");
     try {
-      const token = localStorage.getItem("adminToken");
-      const response = await axios.patch(
-        `http://localhost:8000/kyc/admin/review/${application.id}`,
-        {
-          action: "APPROVED"
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const response = await api.patch(`/kyc/admin/review/${application.id}`, {
+        action: "APPROVED"
+      });
       
       setApplication(response.data);
       toast({
@@ -121,7 +110,7 @@ const AdminApplicationView = () => {
     } catch (error) {
       console.error("Error approving application:", error);
       let errorMessage = "Failed to approve the application";
-      if (axios.isAxiosError(error)) {
+      if (api.isAxiosError && api.isAxiosError(error)) {
         errorMessage = error.response?.data?.detail || errorMessage;
       }
       toast({
@@ -142,19 +131,10 @@ const AdminApplicationView = () => {
     
     setActionLoading("reject");
     try {
-      const token = localStorage.getItem("adminToken");
-      const response = await axios.patch(
-        `http://localhost:8000/kyc/admin/review/${application.id}`,
-        {
-          action: "REJECTED",
-          rejection_reason: reason
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const response = await api.patch(`/kyc/admin/review/${application.id}`, {
+        action: "REJECTED",
+        rejection_reason: reason
+      });
       
       setApplication(response.data);
       toast({
@@ -165,7 +145,7 @@ const AdminApplicationView = () => {
     } catch (error) {
       console.error("Error rejecting application:", error);
       let errorMessage = "Failed to reject the application";
-      if (axios.isAxiosError(error)) {
+      if (api.isAxiosError && api.isAxiosError(error)) {
         errorMessage = error.response?.data?.detail || errorMessage;
       }
       toast({

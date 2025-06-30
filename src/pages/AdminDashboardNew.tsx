@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ArrowLeft, Search, Eye, Filter, Users, Clock, CheckCircle, XCircle, LogOut, Loader2, RefreshCw } from "lucide-react";
 import axios from "axios";
 import { KYCReviewActions } from "./KYCReviewActions";
+import api from "@/lib/api";
 
 interface KYCApplication {
   id: number;
@@ -47,16 +48,11 @@ const AdminDashboardNew = () => {
         return;
       }
 
-      const response = await axios.get("http://localhost:8000/kyc/applications", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
+      const response = await api.get("/kyc/applications");
       setApplications(response.data);
     } catch (error) {
       console.error("Error fetching applications:", error);
-      if (axios.isAxiosError(error)) {
+      if (api.isAxiosError && api.isAxiosError(error)) {
         if (error.response?.status === 401) {
           localStorage.removeItem("adminToken");
           navigate("/admin/login");
@@ -72,6 +68,12 @@ const AdminDashboardNew = () => {
             variant: "destructive"
           });
         }
+      } else {
+        toast({
+          title: "Error",
+          description: "Network error - please check your connection",
+          variant: "destructive"
+        });
       }
     } finally {
       setIsLoading(false);

@@ -21,35 +21,36 @@ const AdminLogin = () => {
     setIsLoading(true);
     setError("");
 
-    
     try {
-  // Send JSON data to match the FastAPI Body(...) parameter
-  const response = await fetch("http://localhost:8000/admin/login", {
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      username: username,
-      password: password
-    }),
-  });
+      // Use fetch with the environment variable for login
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${baseUrl}/admin/login`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password
+        }),
+      });
 
-  const data = await response.json();
+      const data = await response.json();
 
-  if (!response.ok) {
-    throw new Error(data.detail || "Invalid credentials");
-  }
+      if (!response.ok) {
+        throw new Error(data.detail || "Invalid credentials");
+      }
 
-  if (data.access_token) {
-    localStorage.setItem("adminToken", data.access_token);
-    navigate("/admin");
-  }
-} catch (error: any) {
-  setError(error.message || "Invalid credentials. Please try again.");
-} finally {
-  setIsLoading(false);
-}
+      if (data.access_token) {
+        localStorage.setItem("adminToken", data.access_token);
+        navigate("/admin");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+      setError(error.message || "Invalid credentials. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

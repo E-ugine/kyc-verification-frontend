@@ -1,12 +1,12 @@
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
-import axios from "axios";
+import api from "@/lib/api";
 
-interface KYCReviewProps {
+interface KYCReviewActionsProps {
   applicationId: number;
   currentStatus: "PENDING" | "APPROVED" | "REJECTED";
   onStatusChange: (newStatus: "PENDING" | "APPROVED" | "REJECTED") => void;
@@ -14,116 +14,109 @@ interface KYCReviewProps {
 
 export const KYCReviewActions = ({ 
   applicationId, 
-  currentStatus,
+  currentStatus, 
   onStatusChange 
-}: KYCReviewProps) => {
+}: KYCReviewActionsProps) => {
+  const [isLoading, setIsLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState<"approve" | "reject" | null>(null);
 
-  const handleReview = async (action: "APPROVED" | "REJECTED", reason?: string) => {
-    if (action === "REJECTED" && !reason) {
-      toast({
-        title: "Rejection Reason Required",
-        description: "Please provide a reason for rejection",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(action === "APPROVED" ? "approve" : "reject");
-
+  const handleAction = async (action: "APPROVED" | "REJECTED") => {
+    setIsLoading(action);
+    
     try {
-      const token = localStorage.getItem("adminToken");
-      const response = await axios.patch(
-        `http://localhost:8000/kyc/admin/review/${applicationId}`,
-        {
-          action,
-          rejection_reason: reason,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+      let requestData: any = { action };
+      
+      if (action === "REJECTED") {
+        const reason = window.prompt("Please provide a reason for rejection:");
+        if (!reason) {
+          setIsLoading(null);
+          return;
         }
-      );
-
-      toast({
-        title: `Application ${action}`,
-        description: `The KYC application has been ${action.toLowerCase()}`,
-      });
-
-      onStatusChange(action);
-      if (action === "APPROVED") {
-        navigate("/admin");
+        requestData.rejection_reason = reason;
       }
+
+      const response = await api.patch(`/kyc/admin/review/${applicationId}`, requestData);
+      
+      onStatusChange(response.data.status);
+      
+      toast({
+        title: `Application ${action.toLowerCase()}`,
+        description: `The KYC application has been ${action.toLowerCase()} successfully`,
+        variant: "default"
+      });
     } catch (error) {
-      console.error(`Error ${action.toLowerCase()}ing application:`, error);
+      console.error(`Error ${action.toLowerCase()} application:`, error);
       let errorMessage = `Failed to ${action.toLowerCase()} the application`;
-      if (axios.isAxiosError(error)) {
+      if (api.isAxiosError && api.isAxiosError(error)) {
         errorMessage = error.response?.data?.detail || errorMessage;
       }
       toast({
-        title: `${action} Failed`,
+        title: `${action.charAt(0) + action.slice(1).toLowerCase()} Failed`,
         description: errorMessage,
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsLoading(null);
     }
   };
 
-  const handleApprove = () => handleReview("APPROVED");
-
-  const handleReject = () => {
-    const reason = window.prompt("Please enter the rejection reason:");
-    if (reason !== null) {
-      handleReview("REJECTED", reason);
+  const getStatusBadge = (status: string) => {
+    switch (status.toUpperCase()) {
+      case "APPROVED":
+        return (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Approved
+          </Badge>
+        );
+      case "REJECTED":
+        return (
+          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+            <XCircle className="h-3 w-3 mr-1" />
+            Rejected
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">Unknown</Badge>;
     }
   };
 
   if (currentStatus !== "PENDING") {
-    return (
-      <Badge
-        variant={
-          currentStatus === "APPROVED"
-            ? "default"
-            : currentStatus === "REJECTED"
-            ? "destructive"
-            : "secondary"
-        }
-        className={`capitalize ${
-          currentStatus === "APPROVED" ? "bg-green-100 text-green-800" : ""
-        }`}
-      >
-        {currentStatus.toLowerCase()}
-      </Badge>
-    );
+    return getStatusBadge(currentStatus);
   }
 
   return (
     <div className="flex gap-2">
       <Button
-        onClick={handleApprove}
+        size="sm"
+        onClick={() => handleAction("APPROVED")}
         className="bg-green-600 hover:bg-green-700"
-        disabled={isLoading === "approve"}
+        disabled={isLoading === "APPROVED"}
       >
-        {isLoading === "approve" ? (
-          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+        {isLoading === "APPROVED" ? (
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
         ) : (
-          <CheckCircle className="h-4 w-4 mr-2" />
+          <CheckCircle className="h-3 w-3 mr-1" />
         )}
         Approve
       </Button>
       <Button
-        onClick={handleReject}
+        size="sm"
         variant="destructive"
-        disabled={isLoading === "reject"}
+        onClick={() => handleAction("REJECTED")}
+        disabled={isLoading === "REJECTED"}
       >
-        {isLoading === "reject" ? (
-          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+        {isLoading === "REJECTED" ? (
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
         ) : (
-          <XCircle className="h-4 w-4 mr-2" />
+          <XCircle className="h-3 w-3 mr-1" />
         )}
         Reject
       </Button>

@@ -108,48 +108,49 @@ const UserDashboard = () => {
   };
 
   const handleSubmit = async () => {
-  const errors = validateForm();
-  if (errors.length > 0) {
-    setValidationErrors(errors);
-    return;
-  }
-
-  setIsSubmitting(true);
-  setDebugInfo("");
-
-  try {
-    const formDataToSend = new FormData();
-    formDataToSend.append("full_name", formData.fullName);
-
-    const dobFormatted = new Date(formData.dob).toISOString().split("T")[0];
-    formDataToSend.append("dob", dobFormatted);
-
-    formDataToSend.append("id_number", formData.idNumber);
-    formDataToSend.append("country", formData.country);
-    formDataToSend.append("address", formData.address);
-    formDataToSend.append("selfie", files.selfie!);
-    formDataToSend.append("id_doc", files.passport!);
-
-    const response = await fetch("http://localhost:8000/kyc/submit", {
-      method: "POST",
-      body: formDataToSend,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setValidationErrors(errors);
+      return;
     }
 
-    const result = await response.json();
-    console.log("KYC Submission Success:", result);
-    setDebugInfo(`Success! Application submitted with ID: ${result.id}`);
-    resetForm();
-  } catch (error: any) {
-    console.error("Error submitting KYC application:", error);
-    setDebugInfo(`Error: ${error.message}`);
-  } finally {
-    setIsSubmitting(false);
-  }
+    setIsSubmitting(true);
+    setDebugInfo("");
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("full_name", formData.fullName);
+
+      const dobFormatted = new Date(formData.dob).toISOString().split("T")[0];
+      formDataToSend.append("dob", dobFormatted);
+
+      formDataToSend.append("id_number", formData.idNumber);
+      formDataToSend.append("country", formData.country);
+      formDataToSend.append("address", formData.address);
+      formDataToSend.append("selfie", files.selfie!);
+      formDataToSend.append("id_doc", files.passport!);
+
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${baseUrl}/kyc/submit`, {
+        method: "POST",
+        body: formDataToSend,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${response.statusText}\n${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("KYC Submission Success:", result);
+      setDebugInfo(`Success! Application submitted with ID: ${result.id}`);
+      resetForm();
+    } catch (error: any) {
+      console.error("Error submitting KYC application:", error);
+      setDebugInfo(`Error: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
