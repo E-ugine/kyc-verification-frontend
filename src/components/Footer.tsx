@@ -83,7 +83,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-2 text-gray-400">
                 <Phone className="h-4 w-4" />
-                <span className="text-sm">+234 800 123 4567</span>
+                <span className="text-sm">+254 797 783 251</span>
               </div>
             </div>
           </div>
@@ -91,7 +91,7 @@ const Footer = () => {
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <p className="text-gray-400 text-sm">
-            © 2024 KYC Pro. All rights reserved. Built for African fintech excellence.
+            © 2025 KYC Pro. All rights reserved. Built for African fintech excellence.
           </p>
         </div>
       </div>

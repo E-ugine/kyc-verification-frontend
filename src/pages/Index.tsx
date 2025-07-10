@@ -194,7 +194,7 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">Multi-Country Support</h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Support for ID documents from 15+ African countries including Nigeria, Kenya, Ghana, and South Africa.
+                Support for ID documents from 15+ African countries including  Kenya, Nigeria, Ghana, and South Africa.
               </p>
             </div>
 
@@ -273,7 +273,7 @@ const Index = () => {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-gray-700 dark:text-gray-300">Founded in 2023 by former fintech executives</span>
+                    <span className="text-gray-700 dark:text-gray-300">Founded in 2025 by Eugine Agolla</span>
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -281,7 +281,7 @@ const Index = () => {
                   </div>
                   <div className="flex items-center space-x-3">
                     <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                    <span className="text-gray-700 dark:text-gray-300">Headquartered in Lagos with offices across Africa</span>
+                    <span className="text-gray-700 dark:text-gray-300">Headquartered in Nairobi, Kenya. With offices across Africa</span>
                   </div>
                 </div>
               </div>
@@ -359,8 +359,8 @@ const Index = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-800 dark:text-white mb-1">Phone</h4>
-                      <p className="text-gray-600 dark:text-gray-400">+234 800 123 4567</p>
-                      <p className="text-gray-600 dark:text-gray-400">+254 700 123 456</p>
+                      <p className="text-gray-600 dark:text-gray-400">+254 797 783 251</p>
+                      <p className="text-gray-600 dark:text-gray-400">+254 797 783 251</p>
                     </div>
                   </div>
 
@@ -370,8 +370,8 @@ const Index = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-gray-800 dark:text-white mb-1">Offices</h4>
-                      <p className="text-gray-600 dark:text-gray-400">Lagos, Nigeria (HQ)</p>
-                      <p className="text-gray-600 dark:text-gray-400">Nairobi, Kenya</p>
+                      <p className="text-gray-600 dark:text-gray-400">Nairobi, Kenya (HQ)</p>
+                      <p className="text-gray-600 dark:text-gray-400">Lagos, Nigeria</p>
                       <p className="text-gray-600 dark:text-gray-400">Cape Town, South Africa</p>
                     </div>
                   </div>
@@ -379,7 +379,7 @@ const Index = () => {
 
                 <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 rounded-2xl border border-blue-200/30 dark:border-blue-700/30">
                   <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Business Hours</h4>
-                  <p className="text-blue-700 dark:text-blue-400 text-sm">Monday - Friday: 8:00 AM - 6:00 PM (WAT)</p>
+                  <p className="text-blue-700 dark:text-blue-400 text-sm">Monday - Friday: 8:00 AM - 6:00 PM (EAT)</p>
                   <p className="text-blue-700 dark:text-blue-400 text-sm">24/7 Technical Support Available</p>
                 </div>
               </div>
