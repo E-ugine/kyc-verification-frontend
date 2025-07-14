@@ -14,7 +14,7 @@ Live project:(https://lovable.dev/projects/269a29e0-001e-4147-99a0-7d85bef9e0db)
 - ⚡ **Smooth UI** – Built with React, Tailwind, and shadcn-ui for a seamless experience.
 - 🌗 **Dark Mode** – Toggle between light and dark themes.
 - 🖼️ **Responsive Design** – Mobile-first and fully responsive layout.
-- 🔐 **Authentication** – Admin login with token-based authentication.
+- 🔐 **Authentication** – Admin login with token-based authentication
 
 ---
 
